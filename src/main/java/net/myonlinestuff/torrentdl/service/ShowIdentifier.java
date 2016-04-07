@@ -131,7 +131,7 @@ public class ShowIdentifier {
             LOGGER.debug("StartWithPredicate for nameToSearch : " + tempNameToSearch + " and name formated " + name);
             boolean startsWith = tempNameToSearch.startsWith(name);
             if (!startsWith) {
-                startsWith = StringFuzyy.fuzzyLogic(name, tempNameToSearch) > 80 || StringUtils.containsIgnoreCase(tempNameToSearch, name);
+                startsWith = StringFuzyy.fuzzyLogic(name, tempNameToSearch) > 80 || StringUtils.containsIgnoreCase(tempNameToSearch, " " + name + " ");
             }
             if (!startsWith)
                 LOGGER.info("Nothing foound for nameToSearch : " + tempNameToSearch + " and name formated " + name);
