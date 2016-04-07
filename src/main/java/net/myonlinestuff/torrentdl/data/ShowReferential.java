@@ -32,26 +32,30 @@ public class ShowReferential {
 	Environment env;
 
 	Map<String, Show> shows = new HashMap<>();
+    Map<String, Show> showNames = new HashMap<>();
 	List<ShowEpisode> showEpisodes = new ArrayList<>();
 
 	@PostConstruct
 	public void init() {
-		String resource = this.getClass().getClassLoader().getResource(SHOW_PROPERTIES).getFile();
+		final String resource = this.getClass().getClassLoader().getResource(SHOW_PROPERTIES).getFile();
 
 		try (Scanner scanner = new Scanner(new File(resource))) {
 
 			while (scanner.hasNextLine()) {
-				String line = scanner.nextLine();
+				final String line = scanner.nextLine();
 				if (StringUtils.startsWith(line, "#"))
 					continue;
 				if(StringUtils.strip(line).length()<1)
 					continue;
-				String[] tokens = line.split("\\|");
+				final String[] tokens = line.split("\\|");
 				String code = tokens.length > 0 ? StringUtils.strip(tokens[0]) : null;
 				String name = tokens.length > 1 ? StringUtils.strip(tokens[1]) : StringUtils.strip(StringUtils.substringBefore(code, "#"));
 				if(StringUtils.contains(code, "#")){
 					code = StringUtils.replace(code, "#", ".");
 				}
+                if (StringUtils.contains(name, "#")) {
+                    name = StringUtils.replace(name, "#", ".");
+                }
 				if(!StringUtils.endsWith(code, "*")){
 					code = code+"."+"vostfr";
 				}else{
@@ -59,12 +63,13 @@ public class ShowReferential {
 					name= StringUtils.replace(name, "*", "");
 				}
 				code = StringUtils.upperCase(StringUtils.replace(code, ".", " "));
-				Show show = new Show(name, code);
+				final Show show = new Show(name, code);
 				shows.put(code, show);
+                showNames.put(show.getName(), show);
 			}
 			scanner.close();
 
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			LOGGER.error("Error while loading show list", e);
 		}
 	}
