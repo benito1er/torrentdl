@@ -31,9 +31,9 @@ public class ShowReferential {
 	@Autowired
 	Environment env;
 
-	Map<String, Show> shows = new HashMap<>();
-    Map<String, Show> showNames = new HashMap<>();
-	List<ShowEpisode> showEpisodes = new ArrayList<>();
+    private final Map<String, List<Show>> shows = new HashMap<>();
+    private final Map<String, Show> showNames = new HashMap<>();
+    private List<ShowEpisode> showEpisodes = new ArrayList<>();
 
 	@PostConstruct
 	public void init() {
@@ -64,7 +64,11 @@ public class ShowReferential {
 				}
 				code = StringUtils.upperCase(StringUtils.replace(code, ".", " "));
 				final Show show = new Show(name, code);
-				shows.put(code, show);
+				if(shows.get(code)==null){
+				    final List<Show> showList = new ArrayList<>();
+				    shows.put(code,showList);
+				}
+                shows.get(code).add(show);
                 showNames.put(show.getName(), show);
 			}
 			scanner.close();
@@ -74,13 +78,6 @@ public class ShowReferential {
 		}
 	}
 
-	public Map<String, Show> getShows() {
-		return shows;
-	}
-
-	public void setShows(Map<String, Show> shows) {
-		this.shows = shows;
-	}
 
 	public List<ShowEpisode> getShowEpisodes() {
 		return showEpisodes;
@@ -89,5 +86,9 @@ public class ShowReferential {
 	public void setShowEpisodes(List<ShowEpisode> showEpisodes) {
 		this.showEpisodes = showEpisodes;
 	}
+
+    public Map<String, List<Show>> getShows() {
+        return shows;
+    }
 
 }

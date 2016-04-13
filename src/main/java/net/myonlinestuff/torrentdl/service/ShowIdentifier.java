@@ -24,45 +24,42 @@ import net.myonlinestuff.torrentdl.domain.ShowEpisode;
 
 @Component
 public class ShowIdentifier {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ShowIdentifier.class);
-	Pattern normalPattern = Pattern.compile("s(\\d{1,2})e(\\d{1,2})");
-	
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShowIdentifier.class);
+    Pattern normalPattern = Pattern.compile("s(\\d{1,2})e(\\d{1,2})");
 
-	@Autowired
-	ShowReferential referential ;
+    @Autowired
+    ShowReferential referential;
 
     public ShowEpisode identify(String code, String showLinkName) {
         Assert.notNull(showLinkName);
         LOGGER.info("trying to identified show from name:{}]", showLinkName);
-		ShowEpisode identifiedShow = null;
+        ShowEpisode identifiedShow = null;
         final String nameToSearch = showLinkName.toLowerCase();
-		
+
         final List<Show> candidateShow = getCandidateShow(code, nameToSearch);
-		if(!candidateShow.isEmpty()) {
-			Collections.sort(candidateShow);
-			identifiedShow = new ShowEpisode();
-			identifiedShow.setShow(candidateShow.get(0));
-			LOGGER.info("identified show:{}",identifiedShow.getShow().getName());
-			final SeasonEpisode seasonEpisode = findSeasonEpisode(nameToSearch);
-			identifiedShow.setSeasonEpisode(seasonEpisode);
-		}
-		
-		return identifiedShow;
-	}
-	
-	
-	
-	private SeasonEpisode findSeasonEpisode(String nameToSearch) {
-		Assert.notNull(nameToSearch);
+        if (!candidateShow.isEmpty()) {
+            Collections.sort(candidateShow);
+            identifiedShow = new ShowEpisode();
+            identifiedShow.setShow(candidateShow.get(0));
+            LOGGER.info("identified show:{}", identifiedShow.getShow().getName());
+            final SeasonEpisode seasonEpisode = findSeasonEpisode(nameToSearch);
+            identifiedShow.setSeasonEpisode(seasonEpisode);
+        }
+
+        return identifiedShow;
+    }
+
+    private SeasonEpisode findSeasonEpisode(String nameToSearch) {
+        Assert.notNull(nameToSearch);
         LOGGER.debug("Find season and episode in:{}", nameToSearch);
-		SeasonEpisode se = null;
-		final Matcher matcher = normalPattern.matcher(nameToSearch);
-		
-		if(matcher.find() && matcher.groupCount() >=2) {
-			se = new SeasonEpisode();
-			se.setSeason(Integer.parseInt(matcher.group(1),10));
-			se.setEpisode(Integer.parseInt(matcher.group(2),10));
-			
+        SeasonEpisode se = null;
+        final Matcher matcher = normalPattern.matcher(nameToSearch);
+
+        if (matcher.find() && matcher.groupCount() >= 2) {
+            se = new SeasonEpisode();
+            se.setSeason(Integer.parseInt(matcher.group(1), 10));
+            se.setEpisode(Integer.parseInt(matcher.group(2), 10));
+
         } else {
             final String[] showNameAsArray = StringUtils.split(nameToSearch);
             for (final String token : showNameAsArray) {
@@ -79,64 +76,56 @@ public class ShowIdentifier {
                     break;
                 }
             }
-		}
-		return se;
-	}
-	
+        }
+        return se;
+    }
+
     private List<Show> getCandidateShow(String code, final String nameToSearch) {
         final List<Show> candidates = new ArrayList<>();
         final StartWithPredicate swp = new StartWithPredicate(nameToSearch);
-        final Show currentShow = referential.getShows().get(StringUtils.upperCase(code));
-        final Collection<Show> showNames;
-        if (currentShow != null) {
+        final List<Show> currentShows = referential.getShows().get(StringUtils.upperCase(code));
+        for (final Show currentShow : currentShows) {
+            final Collection<Show> showNames;
             showNames = new ArrayList<Show>();
-            showNames.add(currentShow);
-        } else
-            showNames = referential.getShows().values();
-        final Collection<Show> filtered = Collections2.filter(showNames, swp);
-        candidates.addAll(filtered);
+            if (currentShow != null) {
+                showNames.add(currentShow);
+            } else {
+                final Collection<List<Show>> values = referential.getShows().values();
+                for (final List<Show> v : values)
+                    showNames.addAll(v);
+            }
+            final Collection<Show> filtered = Collections2.filter(showNames, swp);
+            candidates.addAll(filtered);
+        }
         return candidates;
     }
-		
-	
-//	private class StringLenghtComparator implements Comparator<String>{
-//
-//		@Override
-//		public int compare(String o1, String o2) {
-//			if(o1 ==null || o2 ==null) {
-//				throw new IllegalArgumentException();
-//			}else {
-//				Integer o1Size = o1.length();
-//				Integer o2Size = o2.length();
-//				return o1Size.compareTo(o2Size);
-//			}
-//			
-//		}
-//		
-//	}
-	private class StartWithPredicate implements Predicate<Show> {
 
-		private final String nameToSearch;
-		
-		public StartWithPredicate(String nameToSearch) {
-			super();
-			this.nameToSearch = nameToSearch;
-		}
+    private class StartWithPredicate implements Predicate<Show> {
 
-		@Override
-		public boolean apply(Show input) {
+        private final String nameToSearch;
+
+        public StartWithPredicate(String nameToSearch) {
+            super();
+            this.nameToSearch = nameToSearch;
+        }
+
+        @Override
+        public boolean apply(Show input) {
             String name = input.getName();
-            name = StringUtils.substringBefore(StringUtils.replace(StringUtils.lowerCase(name), ".", " "),"#");
+            name = StringUtils.substringBefore(StringUtils.replace(StringUtils.lowerCase(name), ".", " "), "#");
             final String tempNameToSearch = StringUtils.replace(StringUtils.replace(StringUtils.replace(StringUtils.lowerCase(nameToSearch), ".", " "), "(", ""), ")", "");
             LOGGER.debug("StartWithPredicate for nameToSearch : " + tempNameToSearch + " and name formated " + name);
             boolean startsWith = tempNameToSearch.startsWith(name);
             if (!startsWith) {
-                startsWith = StringFuzyy.fuzzyLogic(name, tempNameToSearch) > 80 || StringUtils.containsIgnoreCase(tempNameToSearch, " " + name + " ");
+                final int indefOf = StringUtils.indexOfIgnoreCase(tempNameToSearch, name);
+                StringUtils.substring(tempNameToSearch, 0, indefOf + name.length());
+                final boolean goodScore = StringFuzyy.fuzzyLogic(name, tempNameToSearch) > 80;
+                startsWith = goodScore || StringUtils.containsIgnoreCase(tempNameToSearch, " " + name + " ");
             }
             if (!startsWith)
                 LOGGER.info("Nothing foound for nameToSearch : " + tempNameToSearch + " and name formated " + name);
-			return startsWith;
-		}
-		
-	}
+            return startsWith;
+        }
+
+    }
 }
