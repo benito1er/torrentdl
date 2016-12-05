@@ -3,10 +3,10 @@ package net.myonlinestuff.torrentdl.data;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 import javax.annotation.PostConstruct;
 
@@ -31,8 +31,8 @@ public class ShowReferential {
 	@Autowired
 	Environment env;
 
-    private final Map<String, List<Show>> shows = new HashMap<>();
-    private final Map<String, Show> showNames = new HashMap<>();
+    private final Map<String, List<Show>> shows = new TreeMap<>();
+    private final Map<String, Show> showNames = new TreeMap<>();
     private List<ShowEpisode> showEpisodes = new ArrayList<>();
 
 	@PostConstruct

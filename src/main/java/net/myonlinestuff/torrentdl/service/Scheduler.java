@@ -48,7 +48,7 @@ public class Scheduler {
 //
 //    }
 
-    @Scheduled(fixedRate = 82801000)
+    @Scheduled(fixedRate = 30801000)
     public void downloadLookingForShowTorrent() {
         final Map<String, String> lookingForEachTvShow = getPageByResearch();
         identifierAndDownload(lookingForEachTvShow);
@@ -89,7 +89,7 @@ public class Scheduler {
         for (final String tolower : tempLookingForShows) {
             lookingForShows.add(StringUtils.lowerCase(tolower));
         }
-        final Map<String, String> results = new HashMap<String, String>();
+        final Map<String, String> results = new HashMap<>();
         final String searchRootUrl = env.getProperty("site.url.search");
         for (final String looking : lookingForShows) {
             final StringBuilder sb = new StringBuilder();

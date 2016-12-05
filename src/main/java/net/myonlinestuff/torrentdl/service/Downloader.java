@@ -31,11 +31,11 @@ public class Downloader {
 		int season;
 		int episode;
 		Assert.notNull(identifiedShows);
-		for (ShowEpisode showEpisode : identifiedShows) {
-			Show show = showEpisode.getShow();
+		for (final ShowEpisode showEpisode : identifiedShows) {
+			final Show show = showEpisode.getShow();
 			LOGGER.info("Processing show " + show);
 			name = show.getName();
-			SeasonEpisode seasonEpisode = showEpisode.getSeasonEpisode();
+			final SeasonEpisode seasonEpisode = showEpisode.getSeasonEpisode();
 			LOGGER.info("and  show seasonEpisode " + seasonEpisode);
 			season = seasonEpisode != null ? seasonEpisode.getSeason() : 0;
 			episode = seasonEpisode != null ? seasonEpisode.getEpisode() : RandomUtils.nextInt(0, 100);
@@ -44,32 +44,33 @@ public class Downloader {
 			if (!fileManager.fileExists(name, season, episode)) {
 				LOGGER.info("Show not already downloaded:{}", showEpisode);
 				try {
-					URL torrent = new URL(showEpisode.getTorrentUrl());
-					String newTorrentFolderName = fileManager.buildEpisodeFolderName(name, season, episode, false);
-					Path newFolderPath = Paths.get(newTorrentFolderName);
+					final URL torrent = new URL(showEpisode.getTorrentUrl());
+					final String newTorrentFolderName = fileManager.buildEpisodeFolderName(name, season, episode, false);
+					final Path newFolderPath = Paths.get(newTorrentFolderName);
 					if (!Files.exists(newFolderPath)) {
 						Files.createDirectories(newFolderPath);
 					}
-					String oldTorrentFolderName = fileManager.buildEpisodeFolderName(name, season, episode, true);
-					Path oldFolderPath = Paths.get(oldTorrentFolderName);
+					final String oldTorrentFolderName = fileManager.buildEpisodeFolderName(name, season, episode, true);
+					final Path oldFolderPath = Paths.get(oldTorrentFolderName);
 					if (!Files.exists(oldFolderPath)) {
 						Files.createDirectories(oldFolderPath);
 					}
-					String torrentFileName = fileManager.buildEpisodeFileName(name, season, episode);
-					Path newTorrentTarget = Paths.get(newTorrentFolderName, torrentFileName);
-					Path oldTorrentTarget = Paths.get(oldTorrentFolderName, torrentFileName);
+					final String torrentFileName = fileManager.buildEpisodeFileName(name, season, episode);
+					final Path newTorrentTarget = Paths.get(newTorrentFolderName, torrentFileName);
+					final Path oldTorrentTarget = Paths.get(oldTorrentFolderName, torrentFileName);
 					try (InputStream in = torrent.openStream()) {
 						Files.copy(in, newTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
 						Files.copy(in, oldTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
 					}
 					LOGGER.info("Show downloaded:{}", showEpisode);
 
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					LOGGER.error("Error while downloading", e);
 				}
 			}
 		}
 		LOGGER.info("All Shows have been  downloaded:{}");
+        // then upload
 	}
 
 }
