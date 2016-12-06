@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -21,28 +22,38 @@ public class Parser {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Parser.class);
 
 	public List<ShowLink> parseRootPage(String url) {
-		LOGGER.info("parsing root site: {}",url);
+		LOGGER.info("parsing root site: {}", url);
 		List<ShowLink> showLinks = new ArrayList<>();
 		Assert.hasText(url);
-		Document document=null;
+		Document document = null;
 		try {
-			 document = Jsoup.connect(url).get();
+			document = Jsoup.connect(url).get();
 		} catch (IOException e) {
-			LOGGER.error("Error while getting site as document :{}",url,e);
-            return showLinks;
+			LOGGER.error("Error while getting site as document :{}", url, e);
+			return showLinks;
 		}
 		Assert.notNull(document);
-		Elements links = new Elements();
-		links.addAll(document.select("div.ligne0 a"));
-		links.addAll(document.select("div.ligne1 a"));
-		
-		for (Element element : links) {
-			LOGGER.info("element found: {}",element.toString());
-			showLinks.add( new ShowLink(element.text(), element.attr("href")));
+		if (StringUtils.contains(url, "cpasbien")) {
+			Elements el = document.select("div.ligne0 a");
+			addShowLink(url, showLinks, el);
+			el = document.select("div.ligne1 a");
+			addShowLink(url, showLinks, el);
+		} else {
+			Elements el = document.select("td a");
+			addShowLink(url, showLinks, el);
 		}
+		
 		return showLinks;
-		
-		
+
+	}
+
+	private void addShowLink(String url, List<ShowLink> showLinks, Elements el) {
+		if(el != null &&!el.isEmpty()){
+			LOGGER.info("element found: {}", el.toString());
+			for(Element element : el){
+				showLinks.add(new ShowLink(element.text(), element.attr("href"),url));
+			}
+		}
 	}
 
 	public String parseShowPage(String pageUrl) {
@@ -59,7 +70,9 @@ public class Parser {
 		Assert.notNull(document);
 		Elements links = null;
 		links = document.select("a#telecharger");
-		
+		if(links.isEmpty()){
+			links = document.select("a.download");
+		}
 		if(links!=null && !links.isEmpty()) {
 			torrentUrl=links.get(0).attr("href");
 		}

@@ -6,6 +6,14 @@ public class ShowLink {
 
 	private String name;
 	private String pageUrl;
+	private String urlRoot;
+	
+	public String getUrlRoot() {
+		return urlRoot;
+	}
+	public void setUrlRoot(String urlRoot) {
+		this.urlRoot = urlRoot;
+	}
 	public String getName() {
 		return name;
 	}
@@ -18,10 +26,11 @@ public class ShowLink {
 	public void setPageUrl(String pageUrl) {
 		this.pageUrl = pageUrl;
 	}
-	public ShowLink(String name, String pageUrl) {
+	public ShowLink(String name, String pageUrl,String urlRoot) {
 		super();
 		this.name = name;
 		this.pageUrl = pageUrl;
+		this.urlRoot = urlRoot;
 	}
 	public ShowLink() {
 		super();
