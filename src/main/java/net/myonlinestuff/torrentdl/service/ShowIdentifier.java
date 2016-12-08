@@ -86,7 +86,7 @@ public class ShowIdentifier {
         final List<Show> currentShows = referential.getShows().get(StringUtils.upperCase(code));
         for (final Show currentShow : currentShows) {
             final Collection<Show> showNames;
-            showNames = new ArrayList<Show>();
+            showNames = new ArrayList<>();
             if (currentShow != null) {
                 showNames.add(currentShow);
             } else {
@@ -118,8 +118,8 @@ public class ShowIdentifier {
             boolean startsWith = tempNameToSearch.startsWith(name);
             if (!startsWith) {
                 final int indefOf = StringUtils.indexOfIgnoreCase(tempNameToSearch, name);
-                StringUtils.substring(tempNameToSearch, 0, indefOf + name.length());
-                final boolean goodScore = StringFuzyy.fuzzyLogic(name, tempNameToSearch) > 80;
+                final String subStringTempNameToSearch = StringUtils.substring(tempNameToSearch, 0, (indefOf > 0 ? indefOf : 0) + name.length());
+                final boolean goodScore = StringFuzyy.fuzzyLogic(name, subStringTempNameToSearch) > 80;
                 startsWith = goodScore || StringUtils.containsIgnoreCase(tempNameToSearch, " " + name + " ");
             }
             if (!startsWith)

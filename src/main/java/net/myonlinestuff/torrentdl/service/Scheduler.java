@@ -21,72 +21,69 @@ import net.myonlinestuff.torrentdl.domain.ShowLink;
 
 @Component
 public class Scheduler {
-	private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
-	
-	@Autowired
-	Parser parser;
-	
-	@Autowired
-	Downloader downloader;
+    private static final String URL_SEPARATOR = "\t";
 
-	@Autowired
-	ShowIdentifier showIdentifier;
-	
-	@Autowired
-	Environment env;
-	
+    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
 
-	@Autowired
-	ShowReferential showReferential;
-	
-	
+    @Autowired
+    Parser parser;
 
-//	@Scheduled(fixedRate = 3600000)
-//	public void downloadLastestShowTorrent() {
-//        String url = env.getProperty("site.url");
-//        identifierAndDownload(Arrays.asList(url));
-//
-//    }
+    @Autowired
+    Downloader downloader;
+
+    @Autowired
+    ShowIdentifier showIdentifier;
+
+    @Autowired
+    Environment env;
+
+    @Autowired
+    ShowReferential showReferential;
+
+    // @Scheduled(fixedRate = 3600000)
+    // public void downloadLastestShowTorrent() {
+    // String url = env.getProperty("site.url");
+    // identifierAndDownload(Arrays.asList(url));
+    //
+    // }
 
     @Scheduled(fixedRate = 30801000)
-	public void downloadLookingForShowTorrent() {
-		String[] searchRootUrls = StringUtils.split(env.getProperty("site.url.search"),",");
-		for (String searchRootUrl : searchRootUrls) {
-			final Map<String, String> lookingForEachTvShow = getPageByResearch(searchRootUrl);
-			identifierAndDownload(lookingForEachTvShow);
-		}
-	}
+    public void downloadLookingForShowTorrent() {
+        final String[] searchRootUrls = StringUtils.split(env.getProperty("site.url.search"), ",");
+        final Map<String, String> lookingForEachTvShow = getPageByResearch(searchRootUrls);
+        identifierAndDownload(lookingForEachTvShow);
+    }
 
     private void identifierAndDownload(Map<String, String> urls) {
         final Map<String, List<ShowLink>> lookingForShowLinks = new HashMap<>();
         for (final Map.Entry<String, String> urlForLookingForEntry : urls.entrySet()) {
-            lookingForShowLinks.put(urlForLookingForEntry.getKey(), parser.parseRootPage(urlForLookingForEntry.getValue()));
+            lookingForShowLinks.put(urlForLookingForEntry.getKey(), parser.parseRootPage(StringUtils.split(urlForLookingForEntry.getValue(), URL_SEPARATOR)));
         }
         final List<ShowEpisode> lookingForIdentifiedShows = identifyShows(lookingForShowLinks);
         LOGGER.info("Found : " + lookingForIdentifiedShows.size() + " / " + showReferential.getShows().size());
         downloader.downloadAndStore(lookingForIdentifiedShows);
     }
-	
 
     private List<ShowEpisode> identifyShows(Map<String, List<ShowLink>> showLinks) {
         final List<ShowEpisode> identifiedShows = new ArrayList<>();
-        String[] urlRoots = StringUtils.split(env.getProperty("site.url.root"),",");
+        final String[] urlRoots = StringUtils.split(env.getProperty("site.url.root"), ",");
         for (final Map.Entry<String, List<ShowLink>> showLinkEntry : showLinks.entrySet()) {
             final String originalName = showLinkEntry.getKey();
             for (final ShowLink showLink : showLinkEntry.getValue()) {
-            	String urlRoot = null;
-            	for(String urlR : urlRoots){
-            		if(StringUtils.containsIgnoreCase(showLink.getUrlRoot(), urlR)){
-            			urlRoot = urlR;
-            			break;
-            		}
-            	}
+                String urlRoot = null;
+                for (final String urlR : urlRoots) {
+                    if (StringUtils.containsIgnoreCase(showLink.getUrlRoot(), urlR)) {
+                        urlRoot = urlR;
+                        break;
+                    }
+                }
                 final ShowEpisode identifiedShow = showIdentifier.identify(originalName, showLink.getName());
                 if (identifiedShow != null) {
-                    final String showTorrentUrl = parser.parseShowPage(urlRoot +showLink.getPageUrl());
+                    final String torrentUrl = StringUtils.startsWith(showLink.getPageUrl(), "http:") ? showLink.getPageUrl() : urlRoot + showLink.getPageUrl();
+                    final String showTorrentUrl = parser.parseShowPage(torrentUrl);
                     if (StringUtils.isNotBlank(showTorrentUrl)) {
-                        
-						identifiedShow.setTorrentUrl( urlRoot +showTorrentUrl);
+
+                        identifiedShow.setTorrentUrl(urlRoot + showTorrentUrl);
                         identifiedShows.add(identifiedShow);
                     }
                 }
@@ -95,7 +92,7 @@ public class Scheduler {
         return identifiedShows;
     }
 
-    private Map<String, String> getPageByResearch(String searchRootUrl) {
+    private Map<String, String> getPageByResearch(String[] searchRootUrls) {
         final Set<String> tempLookingForShows = showReferential.getShows().keySet();
         final Set<String> lookingForShows = new TreeSet<>();
         for (final String tolower : tempLookingForShows) {
@@ -103,10 +100,14 @@ public class Scheduler {
         }
         final Map<String, String> results = new HashMap<>();
         for (final String looking : lookingForShows) {
-            final StringBuilder sb = new StringBuilder();
-            sb.append(searchRootUrl).append(StringUtils.replace(looking, ".", "")).append(".html");
-            final String lookingForUrl = sb.toString();
-            results.put(looking, lookingForUrl);
+            final StringBuilder urlSiteBuilder = new StringBuilder();
+            for (final String searchRootUrl : searchRootUrls) {
+                final StringBuilder sb = new StringBuilder();
+                sb.append(searchRootUrl).append(StringUtils.replace(looking, ".", "")).append(".html");
+                final String lookingForUrl = sb.toString();
+                urlSiteBuilder.append(lookingForUrl).append(URL_SEPARATOR);
+            }
+            results.put(looking, urlSiteBuilder.toString());
         }
         return results;
     }

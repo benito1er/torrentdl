@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,10 +59,16 @@ public class Downloader {
 					final String torrentFileName = fileManager.buildEpisodeFileName(name, season, episode);
 					final Path newTorrentTarget = Paths.get(newTorrentFolderName, torrentFileName);
 					final Path oldTorrentTarget = Paths.get(oldTorrentFolderName, torrentFileName);
-					try (InputStream in = torrent.openStream()) {
-						Files.copy(in, newTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
-						Files.copy(in, oldTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
-					}
+                    InputStream newTorrentIn = null;
+                    InputStream oldTorrentIn = null;
+					try  {
+					    newTorrentIn=torrent.openStream();
+					    oldTorrentIn = newTorrentIn;
+						Files.copy(newTorrentIn, newTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(oldTorrentIn, oldTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
+                    } finally {
+                        IOUtils.closeQuietly(newTorrentIn);
+                    }
 					LOGGER.info("Show downloaded:{}", showEpisode);
 
 				} catch (final IOException e) {
