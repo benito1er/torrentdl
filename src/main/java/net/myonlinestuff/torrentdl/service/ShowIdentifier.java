@@ -115,15 +115,41 @@ public class ShowIdentifier {
             name = StringUtils.substringBefore(StringUtils.replace(StringUtils.lowerCase(name), ".", " "), "#");
             final String tempNameToSearch = StringUtils.replace(StringUtils.replace(StringUtils.replace(StringUtils.lowerCase(nameToSearch), ".", " "), "(", ""), ")", "");
             LOGGER.debug("StartWithPredicate for nameToSearch : " + tempNameToSearch + " and name formated " + name);
+            String season;
+            final String lowerFileName = StringUtils.lowerCase(tempNameToSearch);
+            final Matcher normalMatcher = normalPattern.matcher(lowerFileName);
+            final boolean normalMGroup = normalMatcher.groupCount() >= 2;
+            final boolean normalFinder = normalMatcher.find();
+            String realName = null;
+            if (normalFinder && normalMGroup) {
+                normalMatcher.group();
+                season = normalMatcher.group(1);
+                normalMatcher.group(2);
+                realName = StringUtils.replace(StringUtils.substringBefore(lowerFileName, "s" + season), ":", " ");
+                if (realName.endsWith(".")) {
+                    realName = StringUtils.removeEnd(realName, ".");
+                }
+                realName = StringUtils.replace(StringUtils.capitalize(StringUtils.strip(realName)), " ", ".");
+
+                realName = StringUtils.replace(realName, "..", ".");
+
+            }
+
             boolean startsWith = tempNameToSearch.startsWith(name);
             if (!startsWith) {
                 final int indefOf = StringUtils.indexOfIgnoreCase(tempNameToSearch, name);
                 final String subStringTempNameToSearch = StringUtils.substring(tempNameToSearch, 0, (indefOf > 0 ? indefOf : 0) + name.length());
-                final boolean goodScore = StringFuzyy.fuzzyLogic(name, subStringTempNameToSearch) > 80;
+                final int fuzzyLogic = StringFuzyy.fuzzyLogic(name, subStringTempNameToSearch) + (indefOf < 0 ? -20 : 0);
+                final boolean goodScore = fuzzyLogic > 80;
                 startsWith = goodScore || StringUtils.containsIgnoreCase(tempNameToSearch, " " + name + " ");
             }
-            if (!startsWith)
+            if (!startsWith) {
                 LOGGER.info("Nothing foound for nameToSearch : " + tempNameToSearch + " and name formated " + name);
+            } else {
+                if (realName != null && realName.length() > 1.3 * name.length()) {
+                    input.setRealName(realName);
+                }
+            }
             return startsWith;
         }
 

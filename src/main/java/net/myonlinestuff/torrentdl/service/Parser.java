@@ -52,7 +52,7 @@ public class Parser {
 
     private void addShowLink(String url, List<ShowLink> showLinks, Elements el) {
         if (el != null && !el.isEmpty()) {
-            LOGGER.info("element found: {}", el.toString());
+            LOGGER.info("element found: {}", el.size());
             for (final Element element : el) {
                 showLinks.add(new ShowLink(element.text(), element.attr("href"), url));
             }

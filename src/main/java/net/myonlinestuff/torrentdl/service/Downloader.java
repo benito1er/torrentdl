@@ -10,7 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import org.apache.commons.lang3.RandomUtils;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +36,15 @@ public class Downloader {
 			final Show show = showEpisode.getShow();
 			LOGGER.info("Processing show " + show);
 			name = show.getName();
+			final String [] names = StringUtils.split(name, ".");
+            final StringBuilder sb = new StringBuilder();
+            for (final String temp : names) {
+                sb.append(StringUtils.capitalize(temp));
+                if (!StringUtils.equalsIgnoreCase(names[names.length - 1], temp)) {
+                    sb.append(".");
+                }
+            }
+            name = sb.toString();
 			final SeasonEpisode seasonEpisode = showEpisode.getSeasonEpisode();
 			LOGGER.info("and  show seasonEpisode " + seasonEpisode);
 			season = seasonEpisode != null ? seasonEpisode.getSeason() : 0;
@@ -60,14 +69,12 @@ public class Downloader {
 					final Path newTorrentTarget = Paths.get(newTorrentFolderName, torrentFileName);
 					final Path oldTorrentTarget = Paths.get(oldTorrentFolderName, torrentFileName);
                     InputStream newTorrentIn = null;
-                    InputStream oldTorrentIn = null;
-					try  {
+                    try  {
 					    newTorrentIn=torrent.openStream();
-					    oldTorrentIn = newTorrentIn;
 						Files.copy(newTorrentIn, newTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
-                        Files.copy(oldTorrentIn, oldTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(newTorrentTarget, oldTorrentTarget,  StandardCopyOption.REPLACE_EXISTING);
                     } finally {
-                        IOUtils.closeQuietly(newTorrentIn);
+                        org.apache.commons.io.IOUtils.closeQuietly(newTorrentIn);
                     }
 					LOGGER.info("Show downloaded:{}", showEpisode);
 

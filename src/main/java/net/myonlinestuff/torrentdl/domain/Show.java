@@ -1,13 +1,15 @@
 package net.myonlinestuff.torrentdl.domain;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 public class Show implements Comparable<Show> {
 
 	private String name;
 	private String code;
+	private String realName;
 	public String getName() {
-		return name;
+        return StringUtils.defaultIfBlank(realName, name);
 	}
 	public void setName(String name) {
 		this.name = name;
@@ -32,9 +34,9 @@ public class Show implements Comparable<Show> {
 		if(o ==null ) {
 			throw new IllegalArgumentException();
 		}else {
-			Show other = (Show)o;
-			Integer o1Size = other.getName().length();
-			Integer o2Size = this.getName().length();
+			final Show other = o;
+			final Integer o1Size = other.getName().length();
+			final Integer o2Size = this.getName().length();
 			return o1Size.compareTo(o2Size);
 		}
 	}
@@ -42,6 +44,11 @@ public class Show implements Comparable<Show> {
 	public String toString() {
 		return ReflectionToStringBuilder.toString(this);
 	}
+
+    public void setRealName(String realName) {
+        this.realName = realName;
+
+    }
 	
 	
 }
