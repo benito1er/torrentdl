@@ -103,7 +103,11 @@ public class Scheduler {
             final StringBuilder urlSiteBuilder = new StringBuilder();
             for (final String searchRootUrl : searchRootUrls) {
                 final StringBuilder sb = new StringBuilder();
-                sb.append(searchRootUrl).append(StringUtils.replace(looking, ".", "")).append(".html");
+                if (!StringUtils.containsIgnoreCase(searchRootUrl, "seedpeer")) {
+                    sb.append(searchRootUrl).append(StringUtils.replace(StringUtils.replace(looking, " ", "%20"), ".", "")).append(".html");
+                } else {
+                    sb.append(searchRootUrl).append(StringUtils.replace(StringUtils.replace(looking, " ", "+"), ".", ""));
+                }
                 final String lookingForUrl = sb.toString();
                 urlSiteBuilder.append(lookingForUrl).append(URL_SEPARATOR);
             }
