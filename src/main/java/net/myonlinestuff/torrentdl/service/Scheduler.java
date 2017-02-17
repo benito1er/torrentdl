@@ -70,6 +70,9 @@ public class Scheduler {
         for (final Map.Entry<String, List<ShowLink>> showLinkEntry : showLinks.entrySet()) {
             final String originalName = showLinkEntry.getKey();
             for (final ShowLink showLink : showLinkEntry.getValue()) {
+                if (StringUtils.isBlank(showLink.getPageUrl())) {
+                    continue;
+                }
                 String urlRoot = null;
                 for (final String urlR : urlRoots) {
                     if (StringUtils.containsIgnoreCase(showLink.getUrlRoot(), urlR)) {
@@ -79,11 +82,15 @@ public class Scheduler {
                 }
                 final ShowEpisode identifiedShow = showIdentifier.identify(originalName, showLink.getName());
                 if (identifiedShow != null) {
-                    final String torrentUrl = StringUtils.startsWith(showLink.getPageUrl(), "http:") ? showLink.getPageUrl() : urlRoot + showLink.getPageUrl();
+
+                    final String torrentUrl = StringUtils.startsWith(showLink.getPageUrl(), "http:") ? showLink.getPageUrl()
+                            : StringUtils.startsWith(showLink.getPageUrl(), "/") && StringUtils.endsWith(urlRoot, "/") ? StringUtils.substringBeforeLast(urlRoot, "/") + showLink.getPageUrl()
+                                    : urlRoot + showLink.getPageUrl();
                     final String showTorrentUrl = parser.parseShowPage(torrentUrl);
                     if (StringUtils.isNotBlank(showTorrentUrl)) {
 
-                        identifiedShow.setTorrentUrl(urlRoot + showTorrentUrl);
+                        identifiedShow.setTorrentUrl(StringUtils.startsWith(showTorrentUrl, "/") && StringUtils.endsWith(urlRoot, "/") ? StringUtils.substringBeforeLast(urlRoot, "/") + showTorrentUrl
+                                : urlRoot + showTorrentUrl);
                         identifiedShows.add(identifiedShow);
                     }
                 }

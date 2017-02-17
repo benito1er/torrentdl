@@ -85,8 +85,7 @@ public class ShowIdentifier {
         final StartWithPredicate swp = new StartWithPredicate(nameToSearch);
         final List<Show> currentShows = referential.getShows().get(StringUtils.upperCase(code));
         for (final Show currentShow : currentShows) {
-            final Collection<Show> showNames;
-            showNames = new ArrayList<>();
+            final Collection<Show> showNames = new ArrayList<>();
             if (currentShow != null) {
                 showNames.add(currentShow);
             } else {

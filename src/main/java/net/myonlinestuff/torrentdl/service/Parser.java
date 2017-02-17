@@ -1,6 +1,7 @@
 package net.myonlinestuff.torrentdl.service;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +42,8 @@ public class Parser {
             Document document = null;
             try {
                 document = Jsoup.connect(url).get();
+            } catch (final SocketTimeoutException e) {
+                continue;
             } catch (final IOException e) {
                 LOGGER.error("Error while getting site as document :{}", url, e);
                 continue;
@@ -78,11 +81,16 @@ public class Parser {
         return null;
     }
 
-    private void addShowLink(String url, List<ShowLink> showLinks, Elements el) {
-        if (el != null && !el.isEmpty()) {
-            LOGGER.info("element found: {}", el.size());
-            for (final Element element : el) {
-                showLinks.add(new ShowLink(element.text(), element.attr("href"), url));
+    private void addShowLink(String url, List<ShowLink> showLinks, Elements elements) {
+        if (elements != null && !elements.isEmpty()) {
+            LOGGER.info("element found: {}", elements.size());
+            for (final Element element : elements) {
+                final String elementHref = element.attr("href");
+                if (StringUtils.isBlank(elementHref)) {
+                    continue;
+                }
+                final String showLinkName = element.text();
+                showLinks.add(new ShowLink(showLinkName, elementHref, url));
             }
         }
     }
@@ -94,6 +102,8 @@ public class Parser {
         Document document = null;
         try {
             document = Jsoup.connect(pageUrl).get();
+        } catch (final SocketTimeoutException e) {
+            return "";
         } catch (final IOException e) {
             LOGGER.error("Error while getting site as document :{}", pageUrl, e);
             return "";
