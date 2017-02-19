@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -24,10 +23,9 @@ import net.myonlinestuff.torrentdl.parser.SiteParser;
 
 @Service
 public class Parser {
-    
+
     @Autowired
     private List<SiteParser> siteParsers;
-
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Parser.class);
 
@@ -39,22 +37,28 @@ public class Parser {
         final List<ShowLink> showLinks = new ArrayList<>();
         for (final String url : urls) {
             Assert.hasText(url);
-            Document document = null;
-            try {
-                document = Jsoup.connect(url).get();
-            } catch (final SocketTimeoutException e) {
-                continue;
-            } catch (final IOException e) {
-                LOGGER.error("Error while getting site as document :{}", url, e);
-                continue;
-            }
-            Assert.notNull(document);
             final String urlRoot = StringUtils.substringBefore(StringUtils.replace(url, "http://", ""), "/");
             SiteParser urlSiteparser = siteParserMap.get(urlRoot);
             if (urlSiteparser == null) {
                 urlSiteparser = getSiteParserByUrl(url);
+                if (urlSiteparser != null) {
+                    urlSiteparser.setUrlRoot("http://" + urlRoot);
+                    urlSiteparser.initCoockies();
+                }
                 siteParserMap.put(urlRoot, urlSiteparser);
             }
+
+            Document document = null;
+            try {
+
+                // document = Jsoup.connect(url).get();
+                document = urlSiteparser.getMainDocument(url);
+            } catch (final SocketTimeoutException e) {
+                continue;
+            } catch (final IOException e) {
+                continue;
+            }
+            Assert.notNull(document);
 
             final Elements el = urlSiteparser.getElementAhref(document);
             // if (StringUtils.contains(url, "cpasbien")) {
@@ -72,7 +76,7 @@ public class Parser {
     }
 
     private SiteParser getSiteParserByUrl(String url) {
-        for(final SiteParser siteParser : siteParsers){
+        for (final SiteParser siteParser : siteParsers) {
             final String specificClassName = siteParser.getMatchingUrl();
             if (StringUtils.containsIgnoreCase(url, specificClassName)) {
                 return siteParser;
@@ -99,9 +103,11 @@ public class Parser {
         String torrentUrl = null;
         LOGGER.info("parsing show page site: {}", pageUrl);
         Assert.hasText(pageUrl);
+        final String urlRoot = StringUtils.substringBefore(StringUtils.replace(pageUrl, "http://", ""), "/");
+        final SiteParser urlSiteparser = siteParserMap.get(urlRoot);
         Document document = null;
         try {
-            document = Jsoup.connect(pageUrl).get();
+            document = urlSiteparser.getShowPageDocument(pageUrl);
         } catch (final SocketTimeoutException e) {
             return "";
         } catch (final IOException e) {
@@ -110,8 +116,7 @@ public class Parser {
         }
 
         Assert.notNull(document);
-        final String urlRoot = StringUtils.substringBefore(StringUtils.replace(pageUrl, "http://", ""), "/");
-        final SiteParser urlSiteparser = siteParserMap.get(urlRoot);
+
         final Elements links = urlSiteparser.getTorrentElement(document);
 
         if (links != null && !links.isEmpty()) {
