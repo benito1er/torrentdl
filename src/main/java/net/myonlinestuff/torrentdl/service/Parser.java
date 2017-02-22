@@ -40,7 +40,7 @@ public class Parser {
             final String urlRoot = StringUtils.substringBefore(StringUtils.replace(url, "http://", ""), "/");
             SiteParser urlSiteparser = siteParserMap.get(urlRoot);
             if (urlSiteparser == null) {
-                urlSiteparser = getSiteParserByUrl(url);
+                urlSiteparser = SiteParserUtils.getSiteParserByUrl(siteParsers, url);
                 if (urlSiteparser != null) {
                     urlSiteparser.setUrlRoot("http://" + urlRoot);
                     urlSiteparser.initCoockies();
@@ -75,15 +75,7 @@ public class Parser {
 
     }
 
-    private SiteParser getSiteParserByUrl(String url) {
-        for (final SiteParser siteParser : siteParsers) {
-            final String specificClassName = siteParser.getMatchingUrl();
-            if (StringUtils.containsIgnoreCase(url, specificClassName)) {
-                return siteParser;
-            }
-        }
-        return null;
-    }
+   
 
     private void addShowLink(String url, List<ShowLink> showLinks, Elements elements) {
         if (elements != null && !elements.isEmpty()) {
@@ -99,30 +91,34 @@ public class Parser {
         }
     }
 
-    public String parseShowPage(String pageUrl) {
+    public List<String> parseShowPage(String pageUrl) {
         String torrentUrl = null;
         LOGGER.info("parsing show page site: {}", pageUrl);
         Assert.hasText(pageUrl);
         final String urlRoot = StringUtils.substringBefore(StringUtils.replace(pageUrl, "http://", ""), "/");
         final SiteParser urlSiteparser = siteParserMap.get(urlRoot);
+        if (urlSiteparser == null) {
+            return new ArrayList<>();
+        }
         Document document = null;
         try {
             document = urlSiteparser.getShowPageDocument(pageUrl);
         } catch (final SocketTimeoutException e) {
-            return "";
+            return new ArrayList<>();
         } catch (final IOException e) {
             LOGGER.error("Error while getting site as document :{}", pageUrl, e);
-            return "";
+            return new ArrayList<>();
         }
 
         Assert.notNull(document);
 
         final Elements links = urlSiteparser.getTorrentElement(document);
-
+        final List<String> torrentUrls = new ArrayList<>();
         if (links != null && !links.isEmpty()) {
             torrentUrl = links.get(0).attr("href");
+            torrentUrls.add(torrentUrl);
         }
-        return torrentUrl;
+        return torrentUrls;
     }
 
 }

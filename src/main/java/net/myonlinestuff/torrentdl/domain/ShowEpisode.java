@@ -1,22 +1,17 @@
 package net.myonlinestuff.torrentdl.domain;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 public class ShowEpisode {
 
 	private Show show;
-	private String torrentUrl;
 	private SeasonEpisode seasonEpisode;
 	private boolean downloaded;
+    private final List<String> torrentUrls = new ArrayList<>();
 	
-	public String getTorrentUrl() {
-		return torrentUrl;
-	}
-	public void setTorrentUrl(String torrentUrl) {
-		this.torrentUrl = torrentUrl;
-	}
 	public SeasonEpisode getSeasonEpisode() {
 		return seasonEpisode;
 	}
@@ -45,6 +40,15 @@ public class ShowEpisode {
 	public String toString() {
 		return ReflectionToStringBuilder.toString(this);
 	}
+
+    public void addTorrentUrl(String torrentUrl) {
+        torrentUrls.add(torrentUrl);
+
+    }
+
+    public List<String> getTorrentUrls() {
+        return torrentUrls;
+    }
 	
 	
 	

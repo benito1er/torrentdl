@@ -21,4 +21,6 @@ public interface SiteParser {
 
     public Document getShowPageDocument(String pageUrl) throws SocketTimeoutException, IOException;
 
+    public String getCoockiesForUrlConn();
+
 }

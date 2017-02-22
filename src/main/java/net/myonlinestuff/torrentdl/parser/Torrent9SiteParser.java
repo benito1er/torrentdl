@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class Torrent9SiteParser extends AbstractSiteParser {
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
+    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
     private static final Logger LOGGER = LoggerFactory.getLogger(Torrent9SiteParser.class);
     @Override
     public Elements getTorrentElement(Document document) {
@@ -81,4 +81,6 @@ public class Torrent9SiteParser extends AbstractSiteParser {
         }
 
     }
+
+
 }

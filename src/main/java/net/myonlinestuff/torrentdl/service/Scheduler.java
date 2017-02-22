@@ -86,13 +86,14 @@ public class Scheduler {
                     final String torrentUrl = StringUtils.startsWith(showLink.getPageUrl(), "http:") ? showLink.getPageUrl()
                             : StringUtils.startsWith(showLink.getPageUrl(), "/") && StringUtils.endsWith(urlRoot, "/") ? StringUtils.substringBeforeLast(urlRoot, "/") + showLink.getPageUrl()
                                     : urlRoot + showLink.getPageUrl();
-                    final String showTorrentUrl = parser.parseShowPage(torrentUrl);
-                    if (StringUtils.isNotBlank(showTorrentUrl)) {
-
-                        identifiedShow.setTorrentUrl(StringUtils.startsWith(showTorrentUrl, "/") && StringUtils.endsWith(urlRoot, "/") ? StringUtils.substringBeforeLast(urlRoot, "/") + showTorrentUrl
-                                : urlRoot + showTorrentUrl);
-                        identifiedShows.add(identifiedShow);
+                    final List<String> showTorrentUrls = parser.parseShowPage(torrentUrl);
+                    for (final String showTorrentUrl : showTorrentUrls) {
+                        if (StringUtils.isNotBlank(showTorrentUrl)) {
+                            identifiedShow.addTorrentUrl(StringUtils.startsWith(showTorrentUrl, "/") && StringUtils.endsWith(urlRoot, "/")
+                                    ? StringUtils.substringBeforeLast(urlRoot, "/") + showTorrentUrl : urlRoot + showTorrentUrl);
+                        }
                     }
+                    identifiedShows.add(identifiedShow);
                 }
             }
         }

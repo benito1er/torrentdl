@@ -112,7 +112,9 @@ public class ShowIdentifier {
         public boolean apply(Show input) {
             String name = input.getName();
             name = StringUtils.substringBefore(StringUtils.replace(StringUtils.lowerCase(name), ".", " "), "#");
-            final String tempNameToSearch = StringUtils.replace(StringUtils.replace(StringUtils.replace(StringUtils.lowerCase(nameToSearch), ".", " "), "(", ""), ")", "");
+            final String tempNameToSearch = StringUtils
+                    .strip(StringUtils.replaceEach(StringUtils.lowerCase(nameToSearch), new String[] { ".", "-", "(", ")", "[ www omgtorrent com ]", "[www cpasbien pe]" },
+                            new String[] { " ", " ", "", "", "", "" }));
             LOGGER.debug("StartWithPredicate for nameToSearch : " + tempNameToSearch + " and name formated " + name);
             String season;
             final String lowerFileName = StringUtils.lowerCase(tempNameToSearch);

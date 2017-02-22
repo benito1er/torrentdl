@@ -1,5 +1,6 @@
 package net.myonlinestuff.torrentdl.domain;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 public class ShowLink {
@@ -15,7 +16,11 @@ public class ShowLink {
 		this.urlRoot = urlRoot;
 	}
 	public String getName() {
-		return name;
+        if (StringUtils.isNotBlank(name)) {
+            return name;
+        } else {
+            return StringUtils.substringAfterLast(pageUrl, "/");
+        }
 	}
 	public void setName(String name) {
 		this.name = name;

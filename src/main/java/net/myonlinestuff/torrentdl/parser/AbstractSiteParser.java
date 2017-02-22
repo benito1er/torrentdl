@@ -15,7 +15,7 @@ public abstract class AbstractSiteParser implements SiteParser {
     protected String urlRoot;
     protected Map<String, String> coockies;
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSiteParser.class);
-    
+
     @Override
     public String getMatchingUrl() {
         return StringUtils.substringBefore(StringUtils.substringAfterLast(this.getClass().getName(), "."), "SiteParser");
@@ -52,7 +52,7 @@ public abstract class AbstractSiteParser implements SiteParser {
     }
 
     @Override
-    public void initCoockies(){
+    public void initCoockies() {
         // throw new NotImplementedException("Not availiable for this parser");
     }
 
@@ -69,5 +69,18 @@ public abstract class AbstractSiteParser implements SiteParser {
             throw e;
         }
 
+    }
+
+    @Override
+    public String getCoockiesForUrlConn() {
+        if (coockies == null || coockies.isEmpty()) {
+            return null;
+        } else {
+            final StringBuilder sb = new StringBuilder();
+            for (final Map.Entry<String, String> coockieEntry : coockies.entrySet()) {
+                sb.append(coockieEntry.getKey()).append("=").append(coockieEntry.getValue()).append(";");
+            }
+            return sb.toString();
+        }
     }
 }
