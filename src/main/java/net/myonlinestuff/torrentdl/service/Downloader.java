@@ -1,16 +1,17 @@
 package net.myonlinestuff.torrentdl.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -25,13 +26,12 @@ import net.myonlinestuff.torrentdl.domain.SeasonEpisode;
 import net.myonlinestuff.torrentdl.domain.Show;
 import net.myonlinestuff.torrentdl.domain.ShowEpisode;
 import net.myonlinestuff.torrentdl.parser.SiteParser;
-import net.myonlinestuff.torrentdl.parser.Torrent9SiteParser;
 
 @Service
 public class Downloader {
     private static final Logger LOGGER = LoggerFactory.getLogger(Downloader.class);
     @Autowired
-    FileManager fileManager;
+    private FileManager fileManager;
 
     @Autowired
     private List<SiteParser> siteParsers;
@@ -43,6 +43,21 @@ public class Downloader {
         int season;
         int episode;
         Assert.notNull(identifiedShows);
+        final File newMagneTorrentUrlFile = new File(fileManager.getNewFolder() + File.separator + "magnetTorrent.txt");
+        final File oldMagneTorrentUrlFile = new File(fileManager.getOldFolder() + File.separator + "magnetTorrent.txt");
+        final Set<String> newMagnets = new HashSet<>();
+        final Set<String> oldMagnets = new HashSet<>();
+
+        try {
+            if (oldMagneTorrentUrlFile.exists())
+                oldMagnets.addAll(FileUtils.readLines(oldMagneTorrentUrlFile));
+            if (newMagneTorrentUrlFile.exists()) {
+                newMagnets.addAll(FileUtils.readLines(newMagneTorrentUrlFile));
+            }
+        } catch (final IOException e) {
+            LOGGER.error("Error while read  magnet file", e);
+        }
+
         for (final ShowEpisode showEpisode : identifiedShows) {
             final Show show = showEpisode.getShow();
             LOGGER.info("Processing show " + show);
@@ -82,9 +97,16 @@ public class Downloader {
                     if (Files.exists(oldTorrentTarget)) {
                         continue;
                     }
-                    InputStream newTorrentIn = null;
-                    try {
-                        for (final String torrentUrl : showEpisode.getTorrentUrls()) {
+
+                    for (final String torrentUrl : showEpisode.getTorrentUrls()) {
+
+                        if (StringUtils.startsWith(torrentUrl, "magnet:")) {
+                            if (!oldMagnets.contains(torrentUrl)) {
+
+                                newMagnets.add(torrentUrl);
+                                oldMagnets.add(torrentUrl);
+                            }
+                        } else {
 
                             final String urlRoot = StringUtils.substringBefore(StringUtils.replace(torrentUrl, "http://", ""), "/");
                             SiteParser urlSiteparser = siteParserMap.get(urlRoot);
@@ -96,24 +118,24 @@ public class Downloader {
                                 }
                                 siteParserMap.put(urlRoot, urlSiteparser);
                             }
-                            final URL torrentURL = new URL(torrentUrl);
-                            final URLConnection conn = torrentURL.openConnection();
-                            if (StringUtils.isNotBlank(urlSiteparser.getCoockiesForUrlConn())) {
-                                conn.setRequestProperty("Cookie", urlSiteparser.getCoockiesForUrlConn());
-                                conn.setRequestProperty("User-Agent", Torrent9SiteParser.USER_AGENT);
-                            }
-                            newTorrentIn = conn.getInputStream();
-
-                            Files.copy(newTorrentIn, newTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
-                            final String torrentUrlValue = FileUtils.readFileToString(newTorrentTarget.toFile());
-                            if (StringUtils.startsWithIgnoreCase(torrentUrlValue, "\n<!DOCTYPE") || StringUtils.startsWithIgnoreCase(torrentUrlValue, "<html>")) {
-                                FileUtils.forceDelete(newTorrentTarget.toFile());
+                            if (urlSiteparser == null) {
                                 continue;
                             }
-                            Files.copy(newTorrentTarget, oldTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
+
+                            InputStream newTorrentIn = null;
+                            try {
+                                newTorrentIn = urlSiteparser.getTorrentURLConnection(torrentUrl).getInputStream();
+                                Files.copy(newTorrentIn, newTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
+                                final String torrentUrlValue = FileUtils.readFileToString(newTorrentTarget.toFile());
+                                if (StringUtils.startsWithIgnoreCase(torrentUrlValue, "\n<!DOCTYPE") || StringUtils.startsWithIgnoreCase(torrentUrlValue, "<html>")) {
+                                    FileUtils.forceDelete(newTorrentTarget.toFile());
+                                    continue;
+                                }
+                                Files.copy(newTorrentTarget, oldTorrentTarget, StandardCopyOption.REPLACE_EXISTING);
+                            } finally {
+                                org.apache.commons.io.IOUtils.closeQuietly(newTorrentIn);
+                            }
                         }
-                    } finally {
-                        org.apache.commons.io.IOUtils.closeQuietly(newTorrentIn);
                     }
                     LOGGER.info("Show downloaded:{}", showEpisode);
 
@@ -121,6 +143,13 @@ public class Downloader {
                     LOGGER.error("Error while downloading", e);
                 }
             }
+
+        }
+        try {
+            FileUtils.writeLines(newMagneTorrentUrlFile, newMagnets);
+            FileUtils.writeLines(oldMagneTorrentUrlFile, oldMagnets);
+        } catch (final IOException e) {
+            LOGGER.error("Error while writting magnet file", e);
         }
         LOGGER.info("All Shows have been  downloaded:{}");
         // then upload

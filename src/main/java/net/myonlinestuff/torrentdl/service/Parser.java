@@ -47,7 +47,9 @@ public class Parser {
                 }
                 siteParserMap.put(urlRoot, urlSiteparser);
             }
-
+            if (urlSiteparser == null) {
+                continue;
+            }
             Document document = null;
             try {
 
@@ -74,8 +76,6 @@ public class Parser {
         return showLinks;
 
     }
-
-   
 
     private void addShowLink(String url, List<ShowLink> showLinks, Elements elements) {
         if (elements != null && !elements.isEmpty()) {
@@ -116,7 +116,9 @@ public class Parser {
         final List<String> torrentUrls = new ArrayList<>();
         if (links != null && !links.isEmpty()) {
             torrentUrl = links.get(0).attr("href");
-            torrentUrls.add(torrentUrl);
+            if (StringUtils.isNoneBlank(torrentUrl) && !"#".equalsIgnoreCase(torrentUrl)) {
+                torrentUrls.add(torrentUrl);
+            }
         }
         return torrentUrls;
     }

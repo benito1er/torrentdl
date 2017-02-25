@@ -13,33 +13,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
-@Service
-public class Torrent9SiteParser extends AbstractSiteParser {
+public class Torrentz2SiteParser extends AbstractSiteParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Torrent9SiteParser.class);
-    @Override
-    public Elements getTorrentElement(Document document) {
-        return document.select("a.download");
-    }
-
-    @Override
-    public void initCoockies() {
-        coockies = getCoockies();
-    }
-
-    
-    private Map<String, String> getCoockies() {
-        Response res = null;
-        final String ua = USER_AGENT;
-        try {
-            res = Jsoup.connect(urlRoot).userAgent(ua).method(Method.POST).execute();
-            return res.cookies();
-        } catch (final IOException e) {
-            return new HashMap<>();
-        }
-    }
 
     @Override
     public Document getMainDocument(String url) throws SocketTimeoutException, IOException {
@@ -65,6 +42,32 @@ public class Torrent9SiteParser extends AbstractSiteParser {
     }
 
     @Override
+    public Elements getElementAhref(Document document) {
+        return document.select("div.results a");
+    }
+
+    @Override
+    public Elements getTorrentElement(Document document) {
+        return document.select("div.download a");
+    }
+
+    @Override
+    public void initCoockies() {
+        coockies = getCoockies();
+    }
+
+    private Map<String, String> getCoockies() {
+        Response res = null;
+        final String ua = USER_AGENT;
+        try {
+            res = Jsoup.connect(urlRoot).userAgent(ua).method(Method.POST).execute();
+            return res.cookies();
+        } catch (final IOException e) {
+            return new HashMap<>();
+        }
+    }
+
+    @Override
     public Document getShowPageDocument(String pageUrl) throws SocketTimeoutException, IOException {
         Document document = null;
         if (coockies.isEmpty()) {
@@ -81,6 +84,5 @@ public class Torrent9SiteParser extends AbstractSiteParser {
         }
 
     }
-
 
 }

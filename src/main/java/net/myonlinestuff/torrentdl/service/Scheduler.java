@@ -89,8 +89,12 @@ public class Scheduler {
                     final List<String> showTorrentUrls = parser.parseShowPage(torrentUrl);
                     for (final String showTorrentUrl : showTorrentUrls) {
                         if (StringUtils.isNotBlank(showTorrentUrl)) {
-                            identifiedShow.addTorrentUrl(StringUtils.startsWith(showTorrentUrl, "/") && StringUtils.endsWith(urlRoot, "/")
-                                    ? StringUtils.substringBeforeLast(urlRoot, "/") + showTorrentUrl : urlRoot + showTorrentUrl);
+                            if (StringUtils.startsWith(showTorrentUrl, "magnet:?")) {
+                                identifiedShow.addTorrentUrl(showTorrentUrl);
+                            } else {
+                                identifiedShow.addTorrentUrl(StringUtils.startsWith(showTorrentUrl, "/") && StringUtils.endsWith(urlRoot, "/")
+                                        ? StringUtils.substringBeforeLast(urlRoot, "/") + showTorrentUrl : urlRoot + showTorrentUrl);
+                            }
                         }
                     }
                     identifiedShows.add(identifiedShow);

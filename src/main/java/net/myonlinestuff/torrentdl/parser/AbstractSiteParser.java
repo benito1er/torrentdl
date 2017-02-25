@@ -1,7 +1,11 @@
 package net.myonlinestuff.torrentdl.parser;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AbstractSiteParser implements SiteParser {
+    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
     protected String urlRoot;
     protected Map<String, String> coockies;
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSiteParser.class);
@@ -82,5 +87,17 @@ public abstract class AbstractSiteParser implements SiteParser {
             }
             return sb.toString();
         }
+    }
+
+    @Override
+    public URLConnection getTorrentURLConnection(final String torrentUrl) throws MalformedURLException, IOException {
+            final URL torrentURL = new URL(torrentUrl);
+            final URLConnection conn = torrentURL.openConnection();
+            if (StringUtils.isNotBlank(this.getCoockiesForUrlConn())) {
+                conn.setRequestProperty("Cookie", this.getCoockiesForUrlConn());
+                conn.setRequestProperty("User-Agent", AbstractSiteParser.USER_AGENT);
+            }
+            return  conn;
+
     }
 }

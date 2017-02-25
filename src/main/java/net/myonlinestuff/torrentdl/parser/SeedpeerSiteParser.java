@@ -20,6 +20,9 @@ public class SeedpeerSiteParser extends AbstractSiteParser {
 
     @Override
     public Elements getTorrentElement(Document document) {
-        return document.select("div.downloadTorrent a[rel]");
+        final Elements result = new Elements();
+        result.addAll(document.select("div.downloadTorrent a[href*=magnet:]"));
+        result.addAll(document.select("div.downloadTorrent a[rel]"));
+        return result;
     }
 }
