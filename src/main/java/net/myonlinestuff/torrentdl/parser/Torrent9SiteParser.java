@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
@@ -57,15 +58,17 @@ public class Torrent9SiteParser extends AbstractSiteParser {
     public Document getMainDocument(String url) throws SocketTimeoutException, IOException {
         final DesiredCapabilities caps = new DesiredCapabilities();
         caps.setJavascriptEnabled(true);
+        caps.setCapability(PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
+                "--port=57401 --webdriver=57401 --logLevel=DEBUG --logfile=D:/Users/benito1er/git/torrentdl/target/phantomjsdriver.log");
         caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, "D:/Users/benito1er/devTools/phantomjs-2.1.1-windows/bin/phantomjs.exe");
 
         caps.setBrowserName(USER_AGENT);
 
-        // caps.setCapability(PhantomJSDriverService.
+
         final WebDriver ghostDriver = new PhantomJSDriver(caps);
 
         Document document = null;
-
+        String scriptValueForFormulaire = null;
         try {
             ghostDriver.get(url);
             // for (final Map.Entry<String, String> currentCookies : coockies.entrySet()) {
@@ -74,31 +77,46 @@ public class Torrent9SiteParser extends AbstractSiteParser {
             // .domain(StringUtils.substringAfter(urlRoot, "//")).build();
             // ghostDriver.manage().addCookie(ck);
             // }
-            ghostDriver.navigate().forward();
+            // final WebDriverWait wait = new WebDriverWait(ghostDriver, 40);
+
+            ghostDriver.navigate().to(url);
             document = Jsoup.parse(ghostDriver.getPageSource());
             if (StringUtils.startsWith(document.html(), "<!doctype html>")) {
                 final Elements jsEls = document.select("script");
-                System.out.println(jsEls.first().html());
-                ;
+                String myScritp = StringUtils.substringBefore(StringUtils.substringAfter(jsEls.first().html(), "setTimeout(function(){"),"'; 121'");
+                myScritp = myScritp.replace("a.value", "var theValue");
+                myScritp += "; console.log(theValue); return theValue;";
+
             if (ghostDriver instanceof JavascriptExecutor) {
-                    final Object title = ((JavascriptExecutor) ghostDriver).executeAsyncScript(jsEls.first().html());
-                    System.out.println(title);
+                    final Object title = ((JavascriptExecutor) ghostDriver).executeScript(myScritp);
+                    scriptValueForFormulaire =title != null ? title.toString() : "";
+                    try {
+                        Thread.sleep(4000);
+                    } catch (final InterruptedException e) {
+                        LOGGER.error(e.getMessage(), e);
+                    }
                     ghostDriver.get(url);
                     ghostDriver.navigate().forward();
                     document = Jsoup.parse(ghostDriver.getPageSource());
-            }
+                }
             }
         } finally {
             ghostDriver.close();
         }
         if (StringUtils.startsWith(document.html(), "<!doctype html>")) {
-            document = tryAnotherMainDocument(url);
+            System.out.println();
+            System.err.println("******************************");
+            System.out.println();
+            document = tryAnotherMainDocument(url, scriptValueForFormulaire);
         }
         return document;
     }
 
-    private Document tryAnotherMainDocument(String url) throws SocketTimeoutException, IOException {
+    private Document tryAnotherMainDocument(String url, String scriptValueForFormulaire) throws SocketTimeoutException, IOException {
         Document document = null;
+        String jschl_vcValue = null;
+        String jschl_passValue = null;
+        String jschl_answerValue = null;
         try {
 
             document = Jsoup.connect(url).ignoreHttpErrors(true).cookies(coockies).userAgent(USER_AGENT).timeout(40000).followRedirects(true).get();
@@ -106,19 +124,23 @@ public class Torrent9SiteParser extends AbstractSiteParser {
 
             if (formElement != null && !formElement.isEmpty()) {
                 final Elements jschl_vc = formElement.select("input[name*=jschl_vc]");
-                jschl_vc.first().attr("value");
+                jschl_vcValue = jschl_vc.attr("value");
                 final Elements jschl_pass = formElement.select("input[name*=pass]");
+                jschl_passValue = jschl_pass.attr("value");
                 final Elements jschl_answer = formElement.select("input[name*=jschl_answer]");
-                System.out.println(jschl_answer + " : " + jschl_answer.first().attr("value"));
-                System.out.println(jschl_pass + " : " + jschl_pass.first().attr("value"));
-                System.out.println(jschl_vc + "  : " + jschl_vc.first().attr("value"));
+                jschl_answer.attr("value", scriptValueForFormulaire);
+                jschl_answerValue = scriptValueForFormulaire;
             }
         } catch (final SocketTimeoutException e) {
             throw e;
         } catch (final IOException e) {
             LOGGER.error("Error while getting site as document :{}", url, e);
             final String tempUrl = StringUtils.replace(url, "%20", " ");
-            final String url2 = Jsoup.connect(tempUrl).cookies(coockies).userAgent(USER_AGENT).ignoreHttpErrors(true).followRedirects(true).timeout(40000).execute().url().toExternalForm();
+            final Connection followRedirects = Jsoup.connect(tempUrl).cookies(coockies).userAgent(USER_AGENT).ignoreHttpErrors(true).followRedirects(true);
+            if (jschl_vcValue != null && jschl_passValue != null && jschl_answerValue != null) {
+                followRedirects.data("jschl_vc", jschl_vcValue).data("pass", jschl_passValue).data("jschl_answer", jschl_answerValue);
+            }
+            final String url2 = followRedirects.timeout(40000).execute().url().toExternalForm();
             try {
                 document = Jsoup.connect(url2).ignoreHttpErrors(true).cookies(coockies).userAgent(USER_AGENT).header("PE-Token", "694bce2767bd788372ff0618982ae769a9fee9d4-1487367347-1800")
                         .timeout(40000).followRedirects(true).get();

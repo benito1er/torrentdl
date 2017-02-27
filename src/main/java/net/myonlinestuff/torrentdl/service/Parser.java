@@ -79,7 +79,7 @@ public class Parser {
 
     private void addShowLink(String url, List<ShowLink> showLinks, Elements elements) {
         if (elements != null && !elements.isEmpty()) {
-            LOGGER.info("element found: {}", elements.size());
+            LOGGER.info(String.format("element found: %s WITH url %s", elements.size(), url));
             for (final Element element : elements) {
                 final String elementHref = element.attr("href");
                 if (StringUtils.isBlank(elementHref)) {
