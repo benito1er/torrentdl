@@ -23,6 +23,12 @@
           <artifactId>phantomjsdriver</artifactId>
           <version>1.2.1</version>
         </dependency>
+        <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-server</artifactId>
+                <version>3.0
+                </version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/com.sun.webkit/webview-deps -->
 <!-- 		<dependency> -->
 <!-- 		    <groupId>com.sun.webkit</groupId> -->

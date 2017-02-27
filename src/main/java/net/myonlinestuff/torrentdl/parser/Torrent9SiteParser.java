@@ -12,8 +12,10 @@ import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -41,6 +43,54 @@ public class Torrent9SiteParser extends AbstractSiteParser {
         Map<String, String> cookiesResponse = new HashMap<>();
         final String ua = USER_AGENT;
         try {
+        	final DesiredCapabilities caps = new DesiredCapabilities();
+            caps.setJavascriptEnabled(true);
+            caps.setCapability(PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
+                    "--port=57401 --webdriver=57401 --logLevel=DEBUG --logfile=D:/Users/benito1er/git/torrentdl/target/phantomjsdriver.log");
+            caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, "D:/Users/benito1er/devTools/phantomjs-2.1.1-windows/bin/phantomjs.exe");
+
+            caps.setBrowserName(USER_AGENT);
+
+
+            final WebDriver ghostDriver = new PhantomJSDriver(caps);
+            try {
+                ghostDriver.get(urlRoot);
+               
+                
+                if (StringUtils.startsWith(ghostDriver.getPageSource(), "<!doctype html>")) {
+                	Document document = Jsoup.parse(ghostDriver.getPageSource());
+                	//
+                    final Elements jsEls = document.select("script");
+                    String myScritp = StringUtils.substringBefore(StringUtils.substringAfter(jsEls.first().html(), "setTimeout(function(){"),"'; 121'");
+                    myScritp = myScritp.replace("a.value", "var theValue");
+                    myScritp += "; console.log(theValue); return theValue;";
+
+                if (ghostDriver instanceof JavascriptExecutor) {
+                        final Object title = ((JavascriptExecutor) ghostDriver).executeScript(myScritp);
+                        String        scriptValueForFormulaire =title != null ? title.toString() : "";
+                        try {
+                            Thread.sleep(4000);
+                        } catch (final InterruptedException e) {
+                            LOGGER.error(e.getMessage(), e);
+                        }
+                        final Elements formElement = document.select("form");
+
+                        if (formElement != null && !formElement.isEmpty()) {
+                        	WebElement challengeformElement = ghostDriver.findElement(By.id("challenge-form"));
+                        	((JavascriptExecutor) ghostDriver).executeScript("document.getElementById('elementID').setAttribute('value', '"+scriptValueForFormulaire+"'");
+                        	//new value for element')",null);
+                        	//ghostDriver.findElement(By.id("jschl_answer")).setAttribute("value", "your value");
+                        	challengeformElement.submit();
+                        	
+                           
+                        }
+                    }
+                }
+            } finally {
+                ghostDriver.close();
+            }
+            
+        	
             res = Jsoup.connect(urlRoot).userAgent(ua).data("jschl_vc", "f9c7ce51fa92597481ae9ddbbaaba511").data("pass", "1488121755.881-3Uts2OLaGM").data("jschl", "jschl_answer").method(Method.POST)
                     .execute();
             cookiesResponse = res.cookies();
